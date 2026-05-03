@@ -1,0 +1,20 @@
+pandas
+numpy
+scikit-learn
+xgboost
+fastapi
+uvicorn
+joblib
+kafka-python
+boto3
+redis
+requests
+psycopg2-binary
+optuna
+lightgbm==4.6.0
+imbalanced-learn==0.10.1
+pydantic==1.10.7
+python-multipart
+# AI Engine additions (Upgrades 1–4)
+anthropic>=0.40.0
+python-dotenv>=1.0.0

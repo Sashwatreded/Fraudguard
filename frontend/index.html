@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FraudGuard — AI-Powered Bank Fraud Detection</title>
+    <meta name="description" content="FraudGuard: Real-time AI-powered bank transaction fraud detection with Claude AI analysis, risk tier classification, and live bank alerts.">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-shield-halved"></i>
+                <h2>FraudGuard</h2>
+            </div>
+            <div class="brand-sub">AI-Powered Detection</div>
+            <ul class="nav-links">
+                <li class="active"><a href="#" data-tab="overview"><i class="fa-solid fa-chart-pie"></i> Overview</a></li>
+                <li><a href="#" data-tab="ai-analysis"><i class="fa-solid fa-brain"></i> AI Analysis</a></li>
+                <li><a href="#" data-tab="live-testing"><i class="fa-solid fa-bolt"></i> Live Testing</a></li>
+                <li><a href="#" data-tab="feed"><i class="fa-solid fa-list-ul"></i> Transaction Feed</a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <div class="model-badge">
+                    <i class="fa-solid fa-microchip"></i>
+                    <span>claude-sonnet-4</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-info">
+                    <h1 id="page-title">Real-Time Fraud Detection</h1>
+                    <p id="page-subtitle">Monitoring active transactions and predicting anomalies</p>
+                </div>
+                <div class="system-status connected" id="systemStatus">
+                    <span class="pulse"></span> System Online
+                </div>
+            </header>
+
+            <!-- ── TAB: OVERVIEW ───────────────────────────────────────── -->
+            <div id="tab-overview" class="tab-pane active">
+                <section class="stats-grid">
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon transactions-icon"><i class="fa-solid fa-money-bill-transfer"></i></div>
+                        <div class="stat-details">
+                            <p>Total Transactions</p>
+                            <h3 id="stat-total">0</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon fraud-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="stat-details">
+                            <p>Detected Frauds</p>
+                            <h3 id="stat-fraud-count">0</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon rate-icon"><i class="fa-solid fa-percent"></i></div>
+                        <div class="stat-details">
+                            <p>Fraud Rate</p>
+                            <h3 id="stat-fraud-rate">0.0%</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon alert-icon"><i class="fa-solid fa-bell"></i></div>
+                        <div class="stat-details">
+                            <p>Bank Alerts</p>
+                            <h3 id="stat-alerts">0</h3>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tier Distribution Bar -->
+                <div class="glass-panel tier-overview-panel">
+                    <h2><i class="fa-solid fa-layer-group"></i> Risk Tier Distribution</h2>
+                    <div class="tier-bars" id="tier-bars">
+                        <div class="tier-bar-row">
+                            <span class="tier-label tier-safe">SAFE</span>
+                            <div class="tier-bar-track"><div class="tier-bar-fill fill-safe" id="bar-safe" style="width:0%"></div></div>
+                            <span class="tier-count" id="count-safe">0</span>
+                        </div>
+                        <div class="tier-bar-row">
+                            <span class="tier-label tier-suspicious">SUSPICIOUS</span>
+                            <div class="tier-bar-track"><div class="tier-bar-fill fill-suspicious" id="bar-suspicious" style="width:0%"></div></div>
+                            <span class="tier-count" id="count-suspicious">0</span>
+                        </div>
+                        <div class="tier-bar-row">
+                            <span class="tier-label tier-high">HIGH RISK</span>
+                            <div class="tier-bar-track"><div class="tier-bar-fill fill-high" id="bar-high" style="width:0%"></div></div>
+                            <span class="tier-count" id="count-high">0</span>
+                        </div>
+                        <div class="tier-bar-row">
+                            <span class="tier-label tier-critical">CRITICAL</span>
+                            <div class="tier-bar-track"><div class="tier-bar-fill fill-critical" id="bar-critical" style="width:0%"></div></div>
+                            <span class="tier-count" id="count-critical">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── TAB: AI ANALYSIS ───────────────────────────────────── -->
+            <div id="tab-ai-analysis" class="tab-pane hidden">
+                <div class="content-grid ai-grid">
+                    <!-- AI Transaction Analyzer Form -->
+                    <div class="glass-panel form-container ai-form-panel">
+                        <div class="panel-header">
+                            <i class="fa-solid fa-brain ai-icon"></i>
+                            <h2>AI Transaction Analyzer</h2>
+                        </div>
+                        <p class="panel-desc">Powered by Claude Sonnet 4 — analyzes behavioral patterns, detects red flags, and recommends action.</p>
+                        <form id="ai-analyze-form">
+                            <div class="form-group">
+                                <label for="ai-amount">Transaction Amount (₹)</label>
+                                <input type="number" id="ai-amount" required placeholder="e.g. 8000" min="0">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="ai-hour">Hour of Day (0–23)</label>
+                                    <input type="number" id="ai-hour" required min="0" max="23" placeholder="e.g. 2">
+                                </div>
+                                <div class="form-group">
+                                    <label for="ai-day">Day of Week (0=Mon)</label>
+                                    <input type="number" id="ai-day" required min="0" max="6" placeholder="e.g. 5">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="ai-txns">Txns Last 24h</label>
+                                    <input type="number" id="ai-txns" required min="0" placeholder="e.g. 12">
+                                </div>
+                                <div class="form-group">
+                                    <label for="ai-amount24h">Amount Last 24h (₹)</label>
+                                    <input type="number" id="ai-amount24h" required min="0" placeholder="e.g. 45000">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="ai-risk">ML Risk Score (0.0–1.0)</label>
+                                <div class="slider-group">
+                                    <input type="range" id="ai-risk-slider" min="0" max="1" step="0.01" value="0.5">
+                                    <input type="number" id="ai-risk" step="0.01" min="0" max="1" required placeholder="0.85">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary btn-ai" id="ai-submit-btn">
+                                <i class="fa-solid fa-brain"></i> Analyze with AI
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- AI Result Panel -->
+                    <div class="glass-panel ai-result-panel" id="ai-result-panel">
+                        <div class="ai-result-placeholder" id="ai-result-placeholder">
+                            <i class="fa-solid fa-magnifying-glass-chart"></i>
+                            <p>Submit a transaction to see AI analysis</p>
+                        </div>
+                        <div id="ai-result-content" class="hidden"></div>
+                    </div>
+                </div>
+
+                <!-- Live Bank Alerts Panel -->
+                <div class="glass-panel alerts-panel">
+                    <div class="panel-header alerts-header">
+                        <div>
+                            <i class="fa-solid fa-bell-concierge"></i>
+                            <h2>Live Bank Alerts</h2>
+                        </div>
+                        <div class="pulse-indicator">
+                            <span class="pulse red relative"></span> Real-Time Feed
+                        </div>
+                    </div>
+                    <div id="alerts-feed" class="alerts-feed">
+                        <div class="alerts-empty" id="alerts-empty">
+                            <i class="fa-solid fa-shield-check"></i>
+                            <p>No alerts yet — system is monitoring</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── TAB: LIVE TESTING ──────────────────────────────────── -->
+            <div id="tab-live-testing" class="tab-pane hidden">
+                <div class="content-grid">
+                    <section id="test-transaction" class="interactive-section">
+                        <div class="glass-panel form-container">
+                            <h2>Test Transaction Model</h2>
+                            <form id="single-predict-form">
+                                <div class="form-group">
+                                    <label for="amount">Transaction Amount ($)</label>
+                                    <input type="number" step="0.01" id="amount" name="amount" required placeholder="e.g. 5000">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="hour">Hour of Day (0-23)</label>
+                                        <input type="number" id="hour" name="hour" required min="0" max="23" placeholder="e.g. 14">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="dayofweek">Day of Week (0-6)</label>
+                                        <input type="number" id="dayofweek" name="dayofweek" required min="0" max="6" placeholder="e.g. 3">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="txns_last_24h">Txns Last 24h</label>
+                                        <input type="number" step="0.01" id="txns_last_24h" name="txns_last_24h" required placeholder="e.g. 5">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="amount_last_24h">Amount Last 24h</label>
+                                        <input type="number" step="0.01" id="amount_last_24h" name="amount_last_24h" required placeholder="e.g. 12000">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="risk_score">Account Risk Score</label>
+                                    <input type="number" step="0.01" id="risk_score" name="risk_score" required placeholder="e.g. 0.85">
+                                </div>
+                                <button type="submit" class="btn-primary">Evaluate Risk</button>
+                            </form>
+                            <div id="single-result" class="result-box hidden"></div>
+                        </div>
+
+                        <div class="glass-panel form-container mt-4">
+                            <h2>Batch CSV Evaluation</h2>
+                            <form id="csv-predict-form">
+                                <div class="file-drop-area">
+                                    <span class="file-msg">Drag &amp; Drop CSV or click to browse</span>
+                                    <input class="file-input" type="file" id="csvFile" accept=".csv" required>
+                                </div>
+                                <button type="submit" class="btn-secondary">Upload &amp; Analyze Batch</button>
+                            </form>
+                            <div id="batch-result" class="result-box hidden"></div>
+                        </div>
+                    </section>
+
+                    <section id="recent-transactions" class="feed-section">
+                        <div class="glass-panel">
+                            <div class="feed-header">
+                                <h2>Live Transaction Feed</h2>
+                                <div class="pulse-indicator">
+                                    <span class="pulse red relative"></span> Live Stream
+                                </div>
+                            </div>
+                            <div class="table-container">
+                                <table class="transaction-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Amount</th>
+                                            <th>Time Evaluated</th>
+                                            <th>Status</th>
+                                            <th>Confidence</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transaction-tbody">
+                                        <!-- Dynamic rows injected here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- ── TAB: FEED ──────────────────────────────────────────── -->
+            <div id="tab-feed" class="tab-pane hidden">
+                <div class="glass-panel">
+                    <div class="feed-header">
+                        <h2>Live Transaction Feed</h2>
+                        <div class="pulse-indicator">
+                            <span class="pulse red relative"></span> Live Stream
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="transaction-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Amount</th>
+                                    <th>Time Evaluated</th>
+                                    <th>Status</th>
+                                    <th>Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody id="feed-tbody">
+                                <!-- Dynamic rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Application Script -->
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: fraud_detection
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+
+  api:
+    build: .
+    ports:
+      - "8001:8000"
+    environment:
+      - REDIS_HOST=redis
+      - KAFKA_BROKER=kafka:9092
+      - DB_HOST=db
+      - DB_PASSWORD=password
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./fraud_alerts.log:/app/fraud_alerts.log
+    depends_on:
+      - redis
+      - kafka
+      - db
+
+  producer:
+    build: .
+    command: python src/kafka_producer.py
+    environment:
+      - KAFKA_BROKER=kafka:9092
+    depends_on:
+      - kafka
+
+  consumer:
+    build: .
+    command: python src/kafka_consumer.py
+    environment:
+      - KAFKA_BROKER=kafka:9092
+    depends_on:
+      - kafka
+
+  ui:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
