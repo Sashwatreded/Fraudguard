@@ -3,7 +3,7 @@ FraudGuard AI Engine — Upgrades 1–4
 =====================================
 Provides:
   - classify_risk_tier()      → Risk tier classification (SAFE → CRITICAL)
-  - get_ai_fraud_explanation() → Claude AI behavioral anomaly analysis
+  - get_ai_fraud_explanation() → Gemini AI behavioral anomaly analysis
   - send_bank_alert()          → Real-time bank alert with log + terminal display
   - process_transaction()      → Full pipeline orchestrator
 """
@@ -25,10 +25,11 @@ except ImportError:
     pass  # python-dotenv not installed — env vars must be set manually
 
 try:
-    import anthropic
-    _ANTHROPIC_AVAILABLE = True
+    from google import genai
+    from google.genai import types
+    _GEMINI_AVAILABLE = True
 except ImportError:
-    _ANTHROPIC_AVAILABLE = False
+    _GEMINI_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,7 @@ def classify_risk_tier(risk_score: float) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# UPGRADE 2 — AI Behavioral Anomaly Explanation (Claude API)
+# UPGRADE 2 — AI Behavioral Anomaly Explanation (Gemini API)
 # ─────────────────────────────────────────────────────────────────────────────
 
 _RULE_BASED_THRESHOLDS = {
@@ -87,7 +88,7 @@ _RULE_MESSAGES = {
 }
 
 def _rule_based_explanation(transaction: dict) -> dict:
-    """Fallback explanation when Claude API is unavailable."""
+    """Fallback explanation when Gemini API is unavailable."""
     flags = [
         _RULE_MESSAGES[key]
         for key, check in _RULE_BASED_THRESHOLDS.items()
@@ -126,16 +127,16 @@ def _rule_based_explanation(transaction: dict) -> dict:
 
 def get_ai_fraud_explanation(transaction: dict) -> dict:
     """
-    Call Claude AI to explain why a transaction is or isn't suspicious.
+    Call Gemini AI to explain why a transaction is or isn't suspicious.
     Only intended to be called when risk_score > 0.45.
 
     Returns structured dict: { red_flags, explanation, confidence, recommendation, source }
     Falls back to rule-based analysis on API failure.
     """
-    api_key = os.getenv("ANTHROPIC_API_KEY", "")
+    api_key = os.getenv("GEMINI_API_KEY", "")
 
-    if not _ANTHROPIC_AVAILABLE or not api_key:
-        logger.warning("Claude API not available — using rule-based fallback")
+    if not _GEMINI_AVAILABLE or not api_key:
+        logger.warning("Gemini API not available — using rule-based fallback")
         return _rule_based_explanation(transaction)
 
     # Build structured prompt
@@ -167,14 +168,13 @@ Return ONLY this JSON structure:
 }}"""
 
     try:
-        client = anthropic.Anthropic(api_key=api_key)
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=512,
-            messages=[{"role": "user", "content": prompt}],
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
         )
 
-        raw = message.content[0].text.strip()
+        raw = response.text.strip()
 
         # Strip markdown code fences if present
         if raw.startswith("```"):
@@ -184,17 +184,17 @@ Return ONLY this JSON structure:
         raw = raw.strip()
 
         result = json.loads(raw)
-        result["source"] = "claude_ai"
-        logger.info("Claude AI explanation obtained successfully")
+        result["source"] = "gemini_ai"
+        logger.info("Gemini AI explanation obtained successfully")
         return result
 
     except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse Claude response as JSON: {e}")
+        logger.error(f"Failed to parse Gemini response as JSON: {e}")
         fallback = _rule_based_explanation(transaction)
         fallback["source"] = "rule_based_fallback_json_error"
         return fallback
     except Exception as e:
-        logger.error(f"Claude API call failed: {e}")
+        logger.error(f"Gemini API call failed: {e}")
         fallback = _rule_based_explanation(transaction)
         fallback["source"] = f"rule_based_fallback_api_error"
         return fallback

@@ -13,7 +13,7 @@ const statAlerts     = document.getElementById('stat-alerts');
 // ── Tab Navigation ────────────────────────────────────────────────────────────
 const TAB_META = {
     'overview':    { title: 'Real-Time Fraud Detection',    sub: 'Monitoring active transactions and predicting anomalies' },
-    'ai-analysis': { title: 'AI-Powered Transaction Analysis', sub: 'Claude Sonnet 4 behavioral anomaly detection & bank alert system' },
+    'ai-analysis': { title: 'AI-Powered Transaction Analysis', sub: 'Gemini AI behavioral anomaly detection & bank alert system' },
     'live-testing':{ title: 'Live Testing',                  sub: 'Test individual transactions or upload a CSV batch' },
     'feed':        { title: 'Transaction Feed',              sub: 'Live stream of all evaluated transactions' },
 };
@@ -27,19 +27,16 @@ document.querySelectorAll('.nav-links a[data-tab]').forEach(link => {
 });
 
 function activateTab(tabId) {
-    // Update nav active state
     document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
     const activeLink = document.querySelector(`.nav-links a[data-tab="${tabId}"]`);
     if (activeLink) activeLink.parentElement.classList.add('active');
 
-    // Show/hide panes
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
     const pane = document.getElementById(`tab-${tabId}`);
     if (pane) pane.classList.remove('hidden');
 
-    // Update header
     const meta = TAB_META[tabId] || {};
-    document.getElementById('page-title').textContent   = meta.title  || '';
+    document.getElementById('page-title').textContent    = meta.title || '';
     document.getElementById('page-subtitle').textContent = meta.sub   || '';
 }
 
@@ -133,7 +130,6 @@ async function fetchAlerts() {
         }
         if (empty) empty.classList.add('hidden');
 
-        // Rebuild feed (keep existing if same count to avoid flicker)
         feed.innerHTML = alerts.map(a => buildAlertCard(a)).join('');
     } catch (_) {}
 }
@@ -173,10 +169,9 @@ function buildAlertCard(alert) {
 // ── AI Analysis Form ─────────────────────────────────────────────────────────
 const aiForm      = document.getElementById('ai-analyze-form');
 const aiSubmitBtn = document.getElementById('ai-submit-btn');
-const aiResultContent    = document.getElementById('ai-result-content');
+const aiResultContent     = document.getElementById('ai-result-content');
 const aiResultPlaceholder = document.getElementById('ai-result-placeholder');
 
-// Sync risk slider ↔ number input
 const riskSlider = document.getElementById('ai-risk-slider');
 const riskInput  = document.getElementById('ai-risk');
 if (riskSlider && riskInput) {
@@ -214,7 +209,6 @@ if (aiForm) {
             });
             const result = await res.json();
             renderAIResult(result, payload);
-            // Refresh alerts panel
             await fetchAlerts();
         } catch (err) {
             aiResultContent.classList.remove('hidden');
@@ -230,13 +224,12 @@ if (aiForm) {
 }
 
 function renderAIResult(result, txn) {
-    const tier    = result.tier || {};
-    const ai      = result.ai_analysis || null;
-    const alert   = result.alert_triggered;
+    const tier     = result.tier || {};
+    const ai       = result.ai_analysis || null;
+    const alert    = result.alert_triggered;
     const tierName = tier.tier || 'UNKNOWN';
     const m        = TIER_META[tierName] || { color: '#888', icon: '❓' };
 
-    // Confidence bar fill
     const score    = txn.risk_score || 0;
     const scoreBar = `<div class="score-bar-track">
         <div class="score-bar-fill" style="width:${(score*100).toFixed(1)}%;background:${m.color}"></div>
@@ -245,8 +238,8 @@ function renderAIResult(result, txn) {
     let aiSection = '';
     if (ai) {
         const flags = (ai.red_flags || []).map(f => `<li><i class="fa-solid fa-flag" style="color:${m.color}"></i> ${f}</li>`).join('');
-        const src   = ai.source === 'claude_ai'
-            ? `<span class="ai-source-badge"><i class="fa-solid fa-brain"></i> Claude AI</span>`
+        const src   = ai.source === 'gemini_ai'
+            ? `<span class="ai-source-badge"><i class="fa-solid fa-brain"></i> Gemini AI</span>`
             : `<span class="ai-source-badge rule-badge"><i class="fa-solid fa-gear"></i> Rule-Based</span>`;
 
         aiSection = `
@@ -293,8 +286,8 @@ function renderAIResult(result, txn) {
     aiResultPlaceholder.classList.add('hidden');
 }
 
-// ── Existing Single Prediction ────────────────────────────────────────────────
-const formSingle = document.getElementById('single-predict-form');
+// ── Single Transaction Test ───────────────────────────────────────────────────
+const formSingle   = document.getElementById('single-predict-form');
 const resultSingle = document.getElementById('single-result');
 
 if (formSingle) {
@@ -339,41 +332,196 @@ if (formSingle) {
     });
 }
 
-// ── CSV Batch ─────────────────────────────────────────────────────────────────
-const formBatch  = document.getElementById('csv-predict-form');
-const fileInput  = document.getElementById('csvFile');
+// ── CSV Batch Upload ──────────────────────────────────────────────────────────
+const formBatch   = document.getElementById('csv-predict-form');
+const fileInput   = document.getElementById('csvFile');
 const resultBatch = document.getElementById('batch-result');
+const fileLabel   = document.getElementById('csv-file-label');
+
+if (fileInput) {
+    fileInput.addEventListener('change', () => {
+        const name = fileInput.files.length ? fileInput.files[0].name : 'No file chosen';
+        if (fileLabel) fileLabel.textContent = name;
+    });
+}
 
 if (formBatch) {
     formBatch.addEventListener('submit', async e => {
         e.preventDefault();
-        if (!fileInput || fileInput.files.length === 0) return;
-        const btn = formBatch.querySelector('button');
-        btn.textContent = 'Uploading…';
+        if (!fileInput || fileInput.files.length === 0) {
+            showBatchError('Please select a CSV file first.');
+            return;
+        }
+
+        const btn = document.getElementById('csv-submit-btn');
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing…';
         btn.disabled = true;
+        resultBatch.classList.add('hidden');
+        resultBatch.innerHTML = '';
+
         const formData = new FormData();
         formData.append('file', fileInput.files[0]);
+
         try {
-            const res    = await fetch(`${API_BASE}/predict/csv`, { method: 'POST', body: formData });
-            const result = await res.json();
-            resultBatch.classList.remove('hidden', 'result-fraud');
-            resultBatch.classList.add('result-safe');
-            resultBatch.innerHTML = `✅ Processed ${result.summary.total_transactions} transactions. Detected ${result.summary.fraud_count} cases of fraud.`;
-            fetchData();
-        } catch (e) {
-            resultBatch.classList.remove('hidden', 'result-safe');
-            resultBatch.classList.add('result-fraud');
-            resultBatch.textContent = 'Upload Error. Check console.';
+            const res  = await fetch(`${API_BASE}/api/analyze-csv`, { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (!res.ok) {
+                const detail = data.detail || JSON.stringify(data);
+                showBatchError(`Server error (${res.status}): ${detail}`);
+                return;
+            }
+
+            renderBatchResults(data);
+            await fetchAlerts();
+        } catch (err) {
+            showBatchError(`Upload failed: ${err.message}`);
         } finally {
-            btn.textContent = 'Upload & Analyze Batch';
+            btn.innerHTML = '<i class="fa-solid fa-file-csv"></i> Upload &amp; Analyze Batch';
             btn.disabled = false;
-            if (fileInput) fileInput.value = '';
+            if (fileInput) { fileInput.value = ''; if (fileLabel) fileLabel.textContent = 'No file chosen'; }
         }
     });
 }
 
-// ── Init & Polling ─────────────────────────────────────────────────────────────
+function showBatchError(msg) {
+    resultBatch.className = 'batch-result-box batch-error';
+    resultBatch.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${msg}`;
+    resultBatch.classList.remove('hidden');
+}
+
+function renderBatchResults(data) {
+    const s       = data.summary || {};
+    const results = data.results || [];
+    const errors  = data.errors  || [];
+
+    const tc    = s.tier_counts || {};
+    const total = s.total_rows ?? 0;
+
+    const TIER_COLORS = {
+        SAFE: '#22c55e', SUSPICIOUS: '#eab308', HIGH_RISK: '#f97316', CRITICAL: '#ef4444'
+    };
+    const TIER_ICONS = { SAFE: '\u2705', SUSPICIOUS: '\u26a0\ufe0f', HIGH_RISK: '\ud83d\udd36', CRITICAL: '\ud83d\udea8' };
+    const TIER_ROW_CLASS = {
+        SAFE: 'row-safe', SUSPICIOUS: 'row-suspicious', HIGH_RISK: 'row-high', CRITICAL: 'row-critical'
+    };
+
+    // Proportional tier bar segments
+    const barSegs = Object.entries(tc)
+        .filter(([, n]) => n > 0)
+        .map(([t, n]) => {
+            const pct = total > 0 ? ((n / total) * 100).toFixed(1) : 0;
+            return `<div class="batch-tier-bar-seg" style="width:${pct}%;background:${TIER_COLORS[t]}"></div>`;
+        }).join('');
+
+    // ── Summary section ───────────────────────────────────────────────────────
+    const summaryHTML = `
+    <div class="batch-summary">
+        <div class="batch-summary-title"><i class="fa-solid fa-chart-bar"></i> Batch Analysis Report</div>
+        <div class="batch-summary-cards">
+            <div class="batch-stat-card bsc-total">
+                <div class="bsc-icon"><i class="fa-solid fa-table-list"></i></div>
+                <span class="bsc-value">${s.total_rows ?? 0}</span>
+                <span class="bsc-label">Rows Processed</span>
+            </div>
+            <div class="batch-stat-card bsc-danger">
+                <div class="bsc-icon"><i class="fa-solid fa-shield-exclamation"></i></div>
+                <span class="bsc-value">${s.fraud_count ?? 0}</span>
+                <span class="bsc-label">High Risk &amp; Critical</span>
+            </div>
+            <div class="batch-stat-card bsc-alert">
+                <div class="bsc-icon"><i class="fa-solid fa-bell"></i></div>
+                <span class="bsc-value">${s.alert_count ?? 0}</span>
+                <span class="bsc-label">Alerts Triggered</span>
+            </div>
+            <div class="batch-stat-card bsc-err">
+                <div class="bsc-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+                <span class="bsc-value">${s.parse_errors ?? 0}</span>
+                <span class="bsc-label">Parse Errors</span>
+            </div>
+        </div>
+        <div class="batch-tier-section">
+            <div class="batch-tier-label">Risk Distribution</div>
+            <div class="batch-tier-pills">
+                ${Object.entries(tc).map(([t, n]) =>
+                    `<span class="batch-tier-pill"
+                        style="background:${TIER_COLORS[t]}22;color:${TIER_COLORS[t]};border:1px solid ${TIER_COLORS[t]}44">
+                        ${TIER_ICONS[t] || ''} ${t.replace('_', '\u00a0')}
+                        <span class="pill-count">${n}</span>
+                    </span>`
+                ).join('')}
+            </div>
+            <div class="batch-tier-bar-track">${barSegs}</div>
+        </div>
+        ${s.truncated
+            ? '<p class="batch-truncated"><i class="fa-solid fa-triangle-exclamation"></i> File truncated \u2014 only the first 200 rows were processed.</p>'
+            : ''}
+    </div>`;
+
+    // ── Per-row table ─────────────────────────────────────────────────────────
+    const rowsHTML = results.length ? `
+    <div class="batch-table-wrap">
+        <table class="batch-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Amount</th>
+                    <th>Hour</th>
+                    <th>Risk Score</th>
+                    <th>Tier</th>
+                    <th>Recommendation</th>
+                    <th>Alert</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${results.map(r => {
+                    const t        = r.tier || {};
+                    const ai       = r.ai_analysis || {};
+                    const col      = TIER_COLORS[t.tier] || '#888';
+                    const score    = Number(r.transaction?.risk_score || 0);
+                    const rowClass = TIER_ROW_CLASS[t.tier] || '';
+                    const hourStr  = r.transaction?.hour != null
+                        ? String(r.transaction.hour).padStart(2, '0') + ':00'
+                        : '\u2014';
+                    return `<tr class="${rowClass}">
+                        <td class="batch-row-num">${r.row}</td>
+                        <td><strong>\u20b9${Number(r.transaction?.amount || 0).toLocaleString()}</strong></td>
+                        <td><span style="color:var(--text-secondary);font-variant-numeric:tabular-nums">${hourStr}</span></td>
+                        <td>
+                            <div class="risk-score-cell">
+                                <div class="risk-mini-bar">
+                                    <div class="risk-mini-fill" style="width:${(score * 100).toFixed(0)}%;background:${col}"></div>
+                                </div>
+                                <span class="risk-score-val" style="color:${col}">${score.toFixed(4)}</span>
+                            </div>
+                        </td>
+                        <td>${tierBadgeHTML(t.tier)}</td>
+                        <td>${recBadgeHTML(ai.recommendation || '\u2014')}</td>
+                        <td>${r.alert_triggered
+                            ? '<span class="batch-alert-dot"><i class="fa-solid fa-bell"></i> Alert</span>'
+                            : '<span class="batch-no-alert">\u2014</span>'
+                        }</td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>
+    </div>` : '';
+
+    // ── Parse errors ──────────────────────────────────────────────────────────
+    const errHTML = errors.length ? `
+    <div class="batch-errors">
+        <strong><i class="fa-solid fa-triangle-exclamation"></i> ${errors.length} row(s) could not be parsed:</strong>
+        <ul>${errors.map(e => `<li>Row ${e.row}: ${e.error}</li>`).join('')}</ul>
+    </div>` : '';
+
+    resultBatch.className = 'batch-result-box';
+    resultBatch.innerHTML = summaryHTML + rowsHTML + errHTML;
+    resultBatch.classList.remove('hidden');
+}
+
+
+// ── Init & Polling ────────────────────────────────────────────────────────────
 fetchData();
 fetchAlerts();
-setInterval(fetchData,  5000);
+setInterval(fetchData,   5000);
 setInterval(fetchAlerts, 5000);

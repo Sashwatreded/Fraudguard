@@ -4,6 +4,7 @@ FraudGuard — Slim API Server (browser demo)
 ============================================
 Serves only the AI-engine endpoints that the frontend needs:
   POST /api/analyze-transaction  — full AI pipeline
+  POST /api/analyze-csv          — batch CSV upload & analysis
   GET  /api/alerts               — reads fraud_alerts.log
   GET  /health                   — liveness probe
   GET  /stats                    — zero-data stub so the dashboard doesn't error
@@ -12,10 +13,11 @@ Serves only the AI-engine endpoints that the frontend needs:
 No PostgreSQL / Redis / ML model required.
 """
 
-import os, json, logging
-from fastapi import FastAPI
+import os, json, logging, csv, io
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
 
@@ -82,6 +84,109 @@ def analyze_transaction(req: AITransactionRequest):
         txn.setdefault("day", 0)
         txn.setdefault("dayofweek", 0)
     return process_transaction(txn)
+
+
+# ── CSV Batch endpoint ─────────────────────────────────────────────────────────
+REQUIRED_CSV_COLS = {"amount", "hour", "risk_score", "txns_last_24h", "amount_last_24h"}
+
+@app.post("/api/analyze-csv")
+async def analyze_csv(file: UploadFile = File(...)):
+    """
+    Accept a CSV file upload.  Each row must contain at minimum:
+      amount, hour, risk_score, txns_last_24h, amount_last_24h
+    Optional: day / dayofweek  (defaults to 0 if absent)
+
+    Returns:
+      summary  — totals and tier counts
+      results  — per-row analysis objects (capped at 200 rows)
+    """
+    if not file.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Only .csv files are accepted.")
+
+    contents = await file.read()
+    try:
+        text = contents.decode("utf-8-sig")   # handle BOM from Excel exports
+    except UnicodeDecodeError:
+        text = contents.decode("latin-1")
+
+    reader = csv.DictReader(io.StringIO(text))
+    if reader.fieldnames is None:
+        raise HTTPException(status_code=400, detail="CSV file is empty or has no header row.")
+
+    # Normalise header names (strip whitespace, lowercase)
+    fieldnames_norm = [f.strip().lower() for f in reader.fieldnames]
+    missing = REQUIRED_CSV_COLS - set(fieldnames_norm)
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail=f"CSV is missing required columns: {', '.join(sorted(missing))}. "
+                   f"Required: {', '.join(sorted(REQUIRED_CSV_COLS))}"
+        )
+
+    results = []
+    errors  = []
+    tier_counts = {"SAFE": 0, "SUSPICIOUS": 0, "HIGH_RISK": 0, "CRITICAL": 0}
+    alert_count = 0
+    MAX_ROWS = 200
+
+    for i, raw_row in enumerate(reader, start=1):
+        if i > MAX_ROWS:
+            break
+        # Normalise keys
+        row = {k.strip().lower(): v.strip() for k, v in raw_row.items() if k}
+        try:
+            txn = {
+                "amount":          float(row.get("amount", 0)),
+                "hour":            int(float(row.get("hour", 0))),
+                "txns_last_24h":   float(row.get("txns_last_24h", 0)),
+                "amount_last_24h": float(row.get("amount_last_24h", 0)),
+                "risk_score":      float(row.get("risk_score", 0)),
+            }
+            # Accept either 'day' or 'dayofweek'
+            if "day" in row:
+                txn["day"] = int(float(row["day"]))
+                txn["dayofweek"] = txn["day"]
+            elif "dayofweek" in row:
+                txn["dayofweek"] = int(float(row["dayofweek"]))
+                txn["day"] = txn["dayofweek"]
+            else:
+                txn["day"] = 0
+                txn["dayofweek"] = 0
+
+            result = process_transaction(txn)
+            tier   = result["tier"]["tier"]
+            tier_counts[tier] = tier_counts.get(tier, 0) + 1
+            if result.get("alert_triggered"):
+                alert_count += 1
+
+            results.append({
+                "row":             i,
+                "transaction":     txn,
+                "tier":            result["tier"],
+                "ai_analysis":     result.get("ai_analysis"),
+                "alert_triggered": result.get("alert_triggered", False),
+                "timestamp":       result.get("timestamp"),
+            })
+        except (ValueError, KeyError) as exc:
+            errors.append({"row": i, "error": str(exc)})
+
+    total = len(results)
+    fraud_rows = tier_counts.get("HIGH_RISK", 0) + tier_counts.get("CRITICAL", 0)
+
+    return JSONResponse(content={
+        "summary": {
+            "total_rows":          total,
+            "total_transactions":  total,          # legacy key kept for compatibility
+            "fraud_count":         fraud_rows,
+            "alert_count":         alert_count,
+            "tier_counts":         tier_counts,
+            "parse_errors":        len(errors),
+            "truncated":           i > MAX_ROWS if total else False,
+        },
+        "results": results,
+        "errors":  errors,
+    })
+
 
 @app.get("/api/alerts")
 def get_alerts(limit: int = 20):

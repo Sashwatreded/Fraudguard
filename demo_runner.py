@@ -106,7 +106,7 @@ def print_table_row(idx: int, txn: dict, result: dict):
     tier_name = result["tier"]["tier"]
     ai        = result.get("ai_analysis") or {}
     rec       = ai.get("recommendation", "—")
-    source    = "AI" if ai.get("source") == "claude_ai" else ("Rules" if ai else "—")
+    source    = "AI" if ai.get("source") == "gemini_ai" else ("Rules" if ai else "—")
     alert_str = _colorize("YES 🔔", "red") if result["alert_triggered"] else _colorize("no", "dim")
     tier_str  = _tier_badge(tier_name)
 

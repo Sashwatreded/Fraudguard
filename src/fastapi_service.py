@@ -14,7 +14,7 @@ import logging
 import csv
 import io
 
-# Load .env if present (for ANTHROPIC_API_KEY etc.)
+# Load .env if present (for GEMINI_API_KEY etc.)
 try:
     from dotenv import load_dotenv
     load_dotenv()

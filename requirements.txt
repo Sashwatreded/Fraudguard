@@ -16,5 +16,5 @@ imbalanced-learn==0.10.1
 pydantic==1.10.7
 python-multipart
 # AI Engine additions (Upgrades 1–4)
-anthropic>=0.40.0
+google-genai>=0.1.0
 python-dotenv>=1.0.0

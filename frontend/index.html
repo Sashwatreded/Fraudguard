@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FraudGuard — AI-Powered Bank Fraud Detection</title>
-    <meta name="description" content="FraudGuard: Real-time AI-powered bank transaction fraud detection with Claude AI analysis, risk tier classification, and live bank alerts.">
+    <meta name="description" content="FraudGuard: Real-time AI-powered bank transaction fraud detection with Gemini AI analysis, risk tier classification, and live bank alerts.">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -30,7 +30,7 @@
             <div class="sidebar-footer">
                 <div class="model-badge">
                     <i class="fa-solid fa-microchip"></i>
-                    <span>claude-sonnet-4</span>
+                    <span>gemini-3.1-pro</span>
                 </div>
             </div>
         </nav>
@@ -117,7 +117,7 @@
                             <i class="fa-solid fa-brain ai-icon"></i>
                             <h2>AI Transaction Analyzer</h2>
                         </div>
-                        <p class="panel-desc">Powered by Claude Sonnet 4 — analyzes behavioral patterns, detects red flags, and recommends action.</p>
+                        <p class="panel-desc">Powered by Gemini AI — analyzes behavioral patterns, detects red flags, and recommends action.</p>
                         <form id="ai-analyze-form">
                             <div class="form-group">
                                 <label for="ai-amount">Transaction Amount (₹)</label>
@@ -228,14 +228,19 @@
 
                         <div class="glass-panel form-container mt-4">
                             <h2>Batch CSV Evaluation</h2>
+                            <p class="panel-desc">Upload a CSV with columns: <code>amount, hour, risk_score, txns_last_24h, amount_last_24h</code> (optional: <code>day</code>). Max 200 rows.</p>
                             <form id="csv-predict-form">
-                                <div class="file-drop-area">
+                                <div class="file-drop-area" onclick="document.getElementById('csvFile').click()">
+                                    <i class="fa-solid fa-file-csv" style="font-size:1.5rem;color:#a78bfa"></i>
                                     <span class="file-msg">Drag &amp; Drop CSV or click to browse</span>
-                                    <input class="file-input" type="file" id="csvFile" accept=".csv" required>
+                                    <span id="csv-file-label" class="file-chosen">No file chosen</span>
+                                    <input class="file-input" type="file" id="csvFile" accept=".csv" required style="display:none">
                                 </div>
-                                <button type="submit" class="btn-secondary">Upload &amp; Analyze Batch</button>
+                                <button type="submit" id="csv-submit-btn" class="btn-secondary">
+                                    <i class="fa-solid fa-file-csv"></i> Upload &amp; Analyze Batch
+                                </button>
                             </form>
-                            <div id="batch-result" class="result-box hidden"></div>
+                            <div id="batch-result" class="batch-result-box hidden"></div>
                         </div>
                     </section>
 
@@ -300,6 +305,6 @@
     </div>
 
     <!-- Application Script -->
-    <script src="app.js"></script>
+    <script src="app.js?v=3"></script>
 </body>
 </html>

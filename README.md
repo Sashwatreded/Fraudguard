@@ -1,10 +1,10 @@
 # 🛡️ FraudGuard — AI-Powered Bank Fraud Detection System
 
-### **Real-Time Transaction Monitoring, Claude AI Analysis & Bank Alert System using FastAPI, Kafka, Redis, and Docker**
+### **Real-Time Transaction Monitoring, Gemini AI Analysis & Bank Alert System using FastAPI, Kafka, Redis, and Docker**
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-High%20Performance-green)
-![Claude AI](https://img.shields.io/badge/Claude%20Sonnet%204-AI%20Powered-purple)
+![Gemini AI](https://img.shields.io/badge/Gemini%20AI-AI%20Powered-purple)
 ![Kafka](https://img.shields.io/badge/Kafka-Streaming-red)
 ![Docker](https://img.shields.io/badge/Docker-Containerized-blue)
 
@@ -12,7 +12,7 @@
 
 ## 🚨 Why This Project Matters
 
-Financial fraud is a multi-billion-dollar problem. **FraudGuard** is engineered to detect and prevent fraudulent transactions in **real-time** — now upgraded with **Claude AI behavioral analysis**, a **4-tier risk classification system**, and a **real-time bank alert engine**.
+Financial fraud is a multi-billion-dollar problem. **FraudGuard** is engineered to detect and prevent fraudulent transactions in **real-time** — now upgraded with **Gemini AI behavioral analysis**, a **4-tier risk classification system**, and a **real-time bank alert engine**.
 
 ### 🔥 Latest Performance Metrics
 - **Precision:** `1.000` ✅ *(No false positives!)*
@@ -27,7 +27,7 @@ Financial fraud is a multi-billion-dollar problem. **FraudGuard** is engineered 
 | Upgrade | Feature |
 |---|---|
 | 🔵 **Risk Tier Classification** | 4-tier system: SAFE → SUSPICIOUS → HIGH_RISK → CRITICAL |
-| 🤖 **Claude AI Analysis** | Behavioral anomaly explanation via `claude-sonnet-4-20250514` |
+| 🤖 **Gemini AI Analysis** | Behavioral anomaly explanation via `gemini-2.5-flash` |
 | 🚨 **Bank Alert System** | Structured alert payloads, log file, terminal display, email/webhook |
 | ⚙️ **Pipeline Orchestrator** | `process_transaction()` ties all 4 upgrades together |
 | 📊 **Demo Runner** | Batch CSV runner with color-coded terminal summary |
@@ -40,7 +40,7 @@ Financial fraud is a multi-billion-dollar problem. **FraudGuard** is engineered 
 FraudGuard is a **real-time, scalable fraud prevention platform** that:
 1. Scores transactions with ML models (Random Forest, XGBoost, LightGBM, Isolation Forest)
 2. Classifies them into risk tiers (SAFE / SUSPICIOUS / HIGH_RISK / CRITICAL)
-3. Sends suspicious transactions to **Claude Sonnet 4** for behavioral anomaly analysis
+3. Sends suspicious transactions to **Gemini AI** for behavioral anomaly analysis
 4. Fires structured bank alerts for HIGH_RISK and CRITICAL transactions
 5. Streams all data through Kafka, caches in Redis, stores in PostgreSQL
 
@@ -64,7 +64,7 @@ User / Frontend Dashboard
          ├──► Kafka Event Stream (Producer → Consumer)
          ├──► Redis Cache (instant risk decisions)
          ├──► PostgreSQL (transaction history)
-         └──► Claude AI Engine (behavioral analysis)
+         └──► Gemini AI Engine (behavioral analysis)
                     │
                     └──► fraud_alerts.log (bank alert log)
 ```
@@ -87,7 +87,7 @@ User / Frontend Dashboard
 | Technology | Purpose |
 |---|---|
 | **FastAPI** | High-performance API framework |
-| **Claude Sonnet 4** | AI behavioral anomaly analysis |
+| **Gemini AI** | AI behavioral anomaly analysis |
 | **Kafka** | Event streaming for real-time transactions |
 | **Redis** | In-memory caching for ultra-fast responses |
 | **Docker** | Containerization & deployment |
@@ -102,7 +102,7 @@ User / Frontend Dashboard
 ### Pre-requisites
 - Python 3.9+
 - Docker & Docker Compose
-- Anthropic API Key (get one at [console.anthropic.com](https://console.anthropic.com))
+- Gemini API Key (get one at [aistudio.google.com](https://aistudio.google.com))
 
 ### 1. Clone the Repository
 ```bash
@@ -113,7 +113,7 @@ cd fraud-detection-system
 ### 2. Set Up Environment Variables
 ```bash
 cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY
+# Edit .env and add your GEMINI_API_KEY
 ```
 
 ### 3. Run with Docker (Recommended)
@@ -186,7 +186,7 @@ curl -X POST http://localhost:8001/api/analyze-transaction \
     "explanation": "...",
     "confidence": "HIGH",
     "recommendation": "BLOCK",
-    "source": "claude_ai"
+    "source": "gemini_ai"
   },
   "alert_triggered": true
 }

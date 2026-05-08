@@ -47,7 +47,7 @@ services:
       - KAFKA_BROKER=kafka:9092
       - DB_HOST=db
       - DB_PASSWORD=password
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     volumes:
       - ./fraud_alerts.log:/app/fraud_alerts.log
     depends_on:
