@@ -241,7 +241,3 @@ When a HIGH_RISK or CRITICAL transaction is detected:
 ```
 
 ---
-
-## 📬 Contact
-
-📂 **Repository**: [github.com/VeedhiBhanushali/fraud-detection-system](https://github.com/VeedhiBhanushali/fraud-detection-system)
